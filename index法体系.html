@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>法体系診断</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f6f8;margin:0}
+.container{max-width:900px;margin:auto;padding:20px}
+.card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+h1{text-align:center}
+.progress{height:10px;background:#ddd;border-radius:10px;overflow:hidden;margin:20px 0}
+.bar{height:100%;width:0%;background:#444;transition:.3s}
+.question{display:none}
+.question.active{display:block}
+.btn{display:block;width:100%;padding:14px;margin:10px 0;border:none;border-radius:12px;background:#eef2f7;cursor:pointer;font-size:16px}
+.btn:hover{background:#dde5ef}
+#result{display:none}
+.small{color:#666}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="card">
+<h1>⚖️ 法体系診断</h1>
+<p>日常の選択から、あなたに最も近い法文化を診断します。</p>
+<div class="progress"><div class="bar" id="bar"></div></div>
+<div id="quiz"></div>
+<div id="result"></div>
+</div>
+</div>
+
+<script>
+const questions=[
+["旅行の計画は？","先に詳細な予定を作る","大枠だけ決めて現地で調整"],
+["ルール違反だが皆が喜んだ","違反は違反","結果が良ければOK"],
+["議論では？","結論を出したい","多様な意見を聞きたい"],
+["新人とベテランが対立","決まりに従う","事情を考慮する"],
+["苦手なのは？","基準が曖昧","人間関係の不和"],
+["文化祭運営なら？","役割を明確化","助け合い重視"],
+["伝統行事について","意味がなければ見直す","続くことに価値"],
+["社会に必要なのは？","個人の自由","共同体の安定"],
+["失敗が起きた","ルール面を検証","改善策を考える"],
+["魅力を感じるのは？","筋が通ること","皆が納得すること"]
+];
+
+const types={
+civil:{name:"📖 大陸法型",text:"あなたは明文化されたルールと体系性を重視するタイプです。公平な基準があれば人は安心して行動できると考えます。感情や場の空気よりも、誰にでも適用できる原則を好みます。組織運営や制度設計との相性が良く、混乱した状況では秩序をもたらす存在です。"},
+common:{name:"⚖️ 英米法型",text:"あなたは現実に即した柔軟な判断を重視します。理論の美しさよりも、実際に機能するかどうかを大切にする傾向があります。過去の経験や事例から学び、状況に応じて最善策を探る実務家タイプです。"},
+islamic:{name:"☪️ イスラム法型",text:"あなたは一貫した価値観と原則を重視する人です。場当たり的な判断よりも、何が正しいかという根本的な基準を求めます。信念を持って行動するため周囲から信頼されやすい一方、妥協を難しく感じることもあります。"},
+socialist:{name:"🔨 社会主義法型",text:"あなたは社会全体の利益や平等を重視します。個人の成功だけでなく、皆が取り残されない仕組みを大切に考えます。協力や連帯を評価し、集団のために行動できる理想主義的な側面を持っています。"},
+religious:{name:"🕊️ 宗教法型",text:"あなたはルールそのものよりも、その背後にある倫理や道徳を重視します。正しい行いとは何かを常に意識し、良心に従って行動する傾向があります。周囲からは誠実な人物として見られることが多いでしょう。"},
+jewish:{name:"📚 ユダヤ法体系型",text:"あなたは議論や解釈を楽しむ知的探究者です。単純な正解よりも、多様な視点を検討することに価値を見出します。複雑な問題に強く、他人が見落とした論点を発見することができます。"},
+hindu:{name:"🌺 ヒンドゥー法型",text:"あなたは調和と関係性を大切にする人です。正しさだけでなく、人々が共存できる状態を重視します。伝統や慣習にも価値を認め、多様な立場を受け入れる包容力を持っています。"}
+};
+
+const scoring=[
+[{civil:2,islamic:1},{common:2}],
+[{civil:1,religious:2,islamic:1},{common:2}],
+[{civil:1},{jewish:2,common:1}],
+[{civil:2},{common:1,hindu:1}],
+[{civil:1},{hindu:2}],
+[{civil:1,socialist:1},{socialist:1,hindu:2}],
+[{civil:2},{hindu:2}],
+[{common:1},{socialist:2}],
+[{civil:2},{common:2}],
+[{islamic:2,religious:1},{hindu:1,jewish:1,socialist:1}]
+];
+
+let q=0;
+const scores={civil:0,common:0,islamic:0,socialist:0,religious:0,jewish:0,hindu:0};
+
+function render(){
+ const quiz=document.getElementById('quiz');
+ if(q>=questions.length){finish();return;}
+ document.getElementById('bar').style.width=((q/questions.length)*100)+'%';
+ quiz.innerHTML=`<div class="question active">
+ <h2>Q${q+1}</h2>
+ <p>${questions[q][0]}</p>
+ <button class="btn" onclick="answer(0)">${questions[q][1]}</button>
+ <button class="btn" onclick="answer(1)">${questions[q][2]}</button>
+ </div>`;
+}
+
+function answer(i){
+ for(const k in scoring[q][i]) scores[k]+=scoring[q][i][k];
+ q++; render();
+}
+
+function finish(){
+ document.getElementById('bar').style.width='100%';
+ let winner=Object.keys(scores).reduce((a,b)=>scores[a]>scores[b]?a:b);
+ document.getElementById('quiz').style.display='none';
+ document.getElementById('result').style.display='block';
+ document.getElementById('result').innerHTML=`
+ <h2>${types[winner].name}</h2>
+ <p>${types[winner].text}</p>
+ <p class="small">SNSで共有するなら：「私は${types[winner].name}でした！」</p>
+ <button class="btn" onclick="location.reload()">もう一度診断する</button>`;
+}
+render();
+</script>
+</body>
+</html>
